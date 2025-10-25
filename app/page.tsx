@@ -16,17 +16,32 @@ export default function Home() {
       await new Promise(r => setTimeout(r, 2000));
 
       setStatus("Notifying server...");
+      // 构造真实 paymentProof（与 402 响应保持一致）
+      const paymentProof = {
+        txHash: "0xMockTxHash", // 实际可用真实支付 txHash
+        amount: info.maxAmountRequired,
+        asset: info.asset,
+        to: info.payTo,
+        network: info.network,
+        resource: info.resource,
+        nonce: crypto.randomUUID()
+        // nonce、facilitatorSig 可补充
+      };
       const notify = await fetch("/api/payment-notify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          recipient: "0xYourTestWalletAddress",
-          paymentProof: "mock-ok"
+          recipient: "0xc55d46058e01c32e764e395afed6333513a2353a", // 替换为你要 mint 的地址
+          paymentProof
         }),
       });
 
       const result = await notify.json();
-      setStatus(`Mint success! Tx: ${result.tx}`);
+      if (result.success) {
+        setStatus(`Mint success! Tx: ${result.tx}`);
+      } else {
+        setStatus(`Mint failed: ${result.error}`);
+      }
     } else {
       setStatus("Unexpected response");
     }

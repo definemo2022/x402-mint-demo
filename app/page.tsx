@@ -3,6 +3,7 @@ import { useState } from "react";
 
 export default function Home() {
   const [status, setStatus] = useState("Ready");
+  const [txHash, setTxHash] = useState<string | null>(null);
 
   async function handleMint() {
     setStatus("Requesting payment info...");
@@ -38,9 +39,11 @@ export default function Home() {
 
       const result = await notify.json();
       if (result.success) {
-        setStatus(`Mint success! Tx: ${result.tx}`);
+        setStatus("Mint success!");
+        setTxHash(result.tx);
       } else {
         setStatus(`Mint failed: ${result.error}`);
+        setTxHash(null);
       }
     } else {
       setStatus("Unexpected response");
@@ -56,7 +59,15 @@ export default function Home() {
       >
         Mint (mock pay)
       </button>
-      <p className="mt-4">{status}</p>
+      <p className="mt-4">
+        {status}
+        {txHash && (
+          <span>
+            {" "}
+            Tx: <a href={`https://sepolia.basescan.org/tx/${txHash}`} target="_blank" rel="noopener noreferrer" className="underline text-blue-600">{txHash}</a>
+          </span>
+        )}
+      </p>
     </main>
   );
 }

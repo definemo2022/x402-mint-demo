@@ -1,11 +1,34 @@
 "use client";
 import { useState } from "react";
+import { ethers } from "ethers";
+
+declare global {
+  interface Window {
+    ethereum?: any;
+  }
+}
 
 export default function Home() {
   const [status, setStatus] = useState("Ready");
   const [txHash, setTxHash] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [wallet, setWallet] = useState<string | null>(null);
+
+  // 钱包连接
+  async function connectWallet() {
+    if (window.ethereum) {
+      try {
+        const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+        setWallet(accounts[0]);
+        setStatus(`Wallet connected: ${accounts[0]}`);
+      } catch (e: any) {
+        setError(e?.message || "Wallet connection failed");
+      }
+    } else {
+      setError("MetaMask not found");
+    }
+  }
 
   async function handleMint() {
     setLoading(true);
@@ -34,7 +57,7 @@ export default function Home() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            recipient: "0xc55d46058e01c32e764e395afed6333513a2353a",
+            recipient: wallet, // 使用连接的钱包地址
             paymentProof
           }),
         });
@@ -65,9 +88,16 @@ export default function Home() {
     <main className="p-10">
       <h1 className="text-xl mb-4">x402 Mint Demo</h1>
       <button
+        className="bg-green-500 text-white px-4 py-2 rounded mb-4"
+        onClick={connectWallet}
+        disabled={!!wallet}
+      >
+        {wallet ? "Wallet Connected" : "Connect Wallet"}
+      </button>
+      <button
         className="bg-blue-500 text-white px-4 py-2 rounded"
         onClick={handleMint}
-        disabled={loading}
+        disabled={loading || !wallet} // 未连接钱包时禁用
       >
         {loading ? "Processing..." : "Mint (mock pay)"}
       </button>
